@@ -55,6 +55,7 @@ public class MainActivity extends ActionBarActivity {
             instance.setField5(500 + random.nextInt() % 10);
             instance.setField6(600 + random.nextInt() % 10);
             instance.setField7(700 + random.nextInt() % 10);
+            instance.setModelA(realm.createObject(SomeModelA.class));
             instance.setField8("This is a string");
         }
         realm.commitTransaction();

@@ -11,6 +11,7 @@ public class SomeModelA extends RealmObject {
     private int field6;
     private int field7;
     private String field8;
+    private SomeModelA modelA;
 
     public String getField8() {
         return field8;
@@ -74,5 +75,13 @@ public class SomeModelA extends RealmObject {
 
     public void setField3(int field3) {
         this.field3 = field3;
+    }
+
+    public SomeModelA getModelA() {
+        return modelA;
+    }
+
+    public void setModelA(SomeModelA modelA) {
+        this.modelA = modelA;
     }
 }
