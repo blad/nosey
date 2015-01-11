@@ -1,65 +1,62 @@
-package com.btellez.noseyexplorer.activity;
+package com.btellez.noseyexplorer;
 
 import android.app.Activity;
 import android.content.Context;
-import android.hardware.display.DisplayManager;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.btellez.noseyexplorer.Inspector;
-import com.btellez.noseyexplorer.Nosey;
+import java.util.List;
 
-public class ModelSelectionActivity extends Activity {
+public class ModelSelectionActivity extends Activity implements AdapterView.OnItemClickListener {
     
-    // Nosey Items
     Nosey nosey;
     Inspector.ModelNameInspector inspector;
-    
-    // Data Access
+
     BaseAdapter adaper;
-    
-    // View
     ListView listView;
     TextView emptyView;
-    
+
     final Context context = this;
-    
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {        
+
+    @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-      
+        FrameLayout contentView = new FrameLayout(this);
+        setContentView(contentView);
+        
+        // Set up Nosey
         nosey = Nosey.getInstance(this);
-      
         inspector = new Inspector.ModelNameInspector();
         inspector.inspect(nosey);
-      
-        adaper = new ArrayAdapter<String>(context, android.R.layout.simple_list_item_1, inspector.getModelNames());
-      
+
+        // Set up List Adapter
+        int listItemLayout = android.R.layout.simple_list_item_1;
+        List<String> modelNames = inspector.getModelNames();
+        adaper = new ArrayAdapter<String>(context, listItemLayout, modelNames);
+        
+        // Set up List View
         listView = new ListView(this);
         listView.setAdapter(adaper);
         listView.setEmptyView(getEmptyView());
-        listView.setOnItemClickListener(getOnItemClickListener());
+        listView.setOnItemClickListener(this);
         
-        setContentView(listView);
+        // Add View Elements to Activity Container
+        contentView.addView(listView);
+        contentView.addView(emptyView);
     }
 
-    private AdapterView.OnItemClickListener getOnItemClickListener() {
-        return new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                DisplayModelActivity.startActivity(ModelSelectionActivity.this, inspector.getModelNames().get(position));
-                Toast.makeText(context, "Clicked "+ position, Toast.LENGTH_LONG).show();
-            }
-        };
+    @Override public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        String modelName = inspector.getModelNames().get(position);
+        DisplayModelActivity.startActivity(context, modelName);
     }
-
+    
     private View getEmptyView() {
         emptyView = new TextView(this);
         emptyView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));

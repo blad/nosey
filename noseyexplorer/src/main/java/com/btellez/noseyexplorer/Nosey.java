@@ -3,8 +3,6 @@ package com.btellez.noseyexplorer;
 import android.content.Context;
 import android.content.Intent;
 
-import com.btellez.noseyexplorer.activity.ModelSelectionActivity;
-
 import java.util.HashMap;
 import java.util.Map;
 
