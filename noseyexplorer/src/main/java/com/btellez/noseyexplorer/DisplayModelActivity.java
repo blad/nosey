@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.HorizontalScrollView;
 import android.widget.ScrollView;
@@ -27,7 +28,10 @@ public class DisplayModelActivity extends Activity {
     private final static String EXTRA_MODEL_KEY = "extra_model_key";
     private int textSize;
     private int padding;
-    
+    private Method[] methods;
+    private Class model;
+    private Context context;
+
     public static void startActivity(Context context, String modelName) {
         Intent intent = new Intent(context, DisplayModelActivity.class);
         intent.putExtra(EXTRA_MODEL_KEY, modelName);
@@ -37,7 +41,7 @@ public class DisplayModelActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        context = this;
         textSize = (int) getResources().getDimension(R.dimen.cell_text_size);
         padding = (int) getResources().getDimension(R.dimen.cell_padding);
         
@@ -45,8 +49,13 @@ public class DisplayModelActivity extends Activity {
         Inspector.ModelMapInspector inspector = new Inspector.ModelMapInspector();
         inspector.inspect(nosey);
 
+        String modelKey = getIntent().getStringExtra(EXTRA_MODEL_KEY);
+        model = inspector.getModelMap().get(modelKey);
+        methods = model.getDeclaredMethods();
+        Arrays.sort(methods, new MemberComparator<Method>());
+        
         TableLayout table = new TableLayout(this);
-        addModelFiledHeaders(table, inspector);
+        addModelFieldHeaders(table, inspector);
         addModelDataRows(table, inspector);
 
         ScrollView scrollView = new ScrollView(this);
@@ -68,29 +77,37 @@ public class DisplayModelActivity extends Activity {
     }
 
     private void addModelDataRows(TableLayout table, Inspector.ModelMapInspector inspector) {
-        String modelKey = getIntent().getStringExtra(EXTRA_MODEL_KEY);
-        Class model = inspector.getModelMap().get(modelKey);
-
         Realm realm = Realm.getInstance(this);
         RealmResults data = realm.where(model).findAll();
-
-        Method[] methods = model.getDeclaredMethods();
-        Arrays.sort(methods, new MemberComparator<Method>());
-        
         for (Object target : data) {
             TableRow row = new ColoredTableRow(this, RowColors.getColor(table.getChildCount()));
-            for (Method method : methods) {
+            int highlight = Color.parseColor("#336699");
+            for (final Method method : methods) {
                 String value = "";
-                if (isAccessor(method.getName())) {
-                    try {
-                        value = method.invoke(target).toString();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
+                TextView cell;
+                Object returnValue;
+                try {
+                    if (isAccessor(method.getName())) {
+                        returnValue = method.invoke(target);
+                        value = returnValue == null ? "null" : returnValue.toString();
+                        cell = new CellTextView(this, value, padding, textSize);
+                        if (Nosey.getInstance(this).isRegistered(method.getReturnType().getSimpleName()) && returnValue != null) {
+                            // Highlight Other Realm Models & Link to them
+                            cell.setTextColor(highlight); 
+                            cell.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    DisplayModelActivity.startActivity(context, method.getReturnType().getSimpleName());
+                                }
+                            });
+                        }
+                        row.addView(cell);
                     }
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
                 }
-                row.addView(new CellTextView(this, value, padding, textSize));
             }
             table.addView(row);
         }
@@ -100,10 +117,8 @@ public class DisplayModelActivity extends Activity {
         return name.startsWith("get") || name.startsWith("is");
     }
 
-    public void addModelFiledHeaders(TableLayout table, Inspector.ModelMapInspector inspector) {
+    public void addModelFieldHeaders(TableLayout table, Inspector.ModelMapInspector inspector) {
         // Get Fields for a given model
-        String modelKey = getIntent().getStringExtra(EXTRA_MODEL_KEY);
-        Class model = inspector.getModelMap().get(modelKey);
         model.getDeclaredFields();
         Field[] allFields = model.getDeclaredFields();
         Arrays.sort(allFields, new MemberComparator<Field>());

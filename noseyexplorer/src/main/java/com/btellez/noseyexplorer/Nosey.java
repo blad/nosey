@@ -41,9 +41,13 @@ public class Nosey {
         objectTypes.put(type.getSimpleName(), type);
         return this;
     }
-
+    
     public Nosey unregister(Class<? extends RealmObject> type) {
         objectTypes.remove(type.getSimpleName());
         return this;
+    }
+
+    public boolean isRegistered(String className) {
+        return objectTypes.containsKey(className);
     }
 }
