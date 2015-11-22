@@ -17,6 +17,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -87,7 +88,7 @@ public class DisplayModelActivity extends Activity {
                 TextView cell;
                 Object returnValue;
                 try {
-                    if (isAccessor(method.getName())) {
+                    if (isAccessor(method.getName()) && !Modifier.isStatic(method.getModifiers())) {
                         returnValue = method.invoke(target);
                         value = returnValue == null ? "null" : returnValue.toString();
                         cell = new CellTextView(this, value, padding, textSize);
@@ -126,7 +127,9 @@ public class DisplayModelActivity extends Activity {
         // Add the field headers to the table row
         TableRow headers = new ColoredTableRow(this, RowColors.getColor(table.getChildCount()));
         for (Field field : allFields) {
-            headers.addView(new CellTextView(this, field.getName(), padding, textSize));
+            if (!Modifier.isStatic(field.getModifiers())) {
+                headers.addView(new CellTextView(this, field.getName(), padding, textSize));
+            }
         }
         table.addView(headers);
     }
